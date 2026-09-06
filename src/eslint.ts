@@ -315,7 +315,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
   }
 
   function ignored(p: string) {
-    return ignores.some((pattern) => pattern.test(p));
+    return ignores.some((pattern) => pattern.test(p) || pattern.test('/' + p));
   }
 
   function walk(dir: string, repoRoot: string, cfgPathDir: string) {
@@ -323,7 +323,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
     for (const entry of entries) {
       const fullPath = dir + '/' + entry.name;
       const ignorePath = Path.relative(repoRoot, fullPath).split(Path.sep).join('/');
-      
+
       if (ignored(ignorePath)) {
         continue;
       }
@@ -350,7 +350,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
     const content = fs.readFileSync(file, 'utf-8');
     const key = resultCacheKey({
       configHash,
-      catalogHash  : catalog,
+      catalogHash: catalog,
       eslintVersion: version,
       argsKey,
       relPath,
@@ -484,7 +484,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
       const relPath = Path.relative(repoRoot, result.filePath).split(Path.sep).join('/');
       const key = resultCacheKey({
         configHash,
-        catalogHash  : catalog,
+        catalogHash: catalog,
         eslintVersion: version,
         argsKey,
         relPath,
@@ -495,7 +495,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
         cachePath(key),
         JSON.stringify({
           errorCount: result.errorCount,
-          output    : text,
+          output: text,
         } satisfies CachedLintResult),
       );
       if (performance.now() - lastFlush > flushInterval) {
