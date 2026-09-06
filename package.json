@@ -1,7 +1,11 @@
 {
   "name": "@pathtx/eslint-dispatcher",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Joseph Eagar",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joeedh/eslint-dispatcher.git"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
