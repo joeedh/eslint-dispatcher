@@ -73,25 +73,53 @@ function globToRegExp(glob: string): RegExp {
   return new RegExp('^' + escaped + '$');
 }
 
-async function loadConfig(repoRoot: string) {
-  let cfgPath = Path.join(repoRoot, 'eslint.config.js');
-  if (!fs.existsSync(cfgPath)) {
-    cfgPath = Path.join(repoRoot, 'eslint.config.mjs');
-  }
-  if (!fs.existsSync(cfgPath)) {
-    cfgPath = Path.join(repoRoot, 'eslint.config.ts');
-  }
-  if (!fs.existsSync(cfgPath)) {
-    cfgPath = Path.join(repoRoot, 'eslint.config.mts');
-  }
+// eslint.config resolution order mirrors ESLint's own: plain JS first, then explicit
+// ESM/CJS variants, then the TypeScript equivalents.
+const CONFIG_EXTENSIONS = ['js', 'mjs', 'cjs', 'ts', 'mts', 'cts'];
 
+// A directory is still "inside" version control if it (or a worktree pointer to it) has a
+// .git entry - could be a directory (normal repo) or a file (worktree/submodule gitlink).
+function isGitDir(dir: string): boolean {
+  return fs.existsSync(Path.join(dir, '.git'));
+}
+
+// `repoRoot` is only the nearest git boundary to cwd - in a nested-repo or monorepo layout
+// the real eslint.config can live above it. So keep walking up through further git
+// boundaries, not just the first one, and only give up once we step outside version control
+// entirely (a folder with no .git), since searching the rest of the filesystem past that
+// point isn't meaningful.
+function findConfigFile(startDir: string): string {
+  let dir = Path.resolve(startDir);
+  while (true) {
+    for (const ext of CONFIG_EXTENSIONS) {
+      const candidate = Path.join(dir, `eslint.config.${ext}`);
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+    if (!isGitDir(dir)) {
+      break;
+    }
+    const parent = Path.dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  throw new Error(
+    `Could not find an eslint.config.(${CONFIG_EXTENSIONS.join('|')}) file walking up from ${startDir}`,
+  );
+}
+
+async function loadConfig(repoRoot: string) {
+  const cfgPath = findConfigFile(repoRoot);
   const cfgText = fs.readFileSync(cfgPath, 'utf-8');
   const configHash = sha256(`${CONFIG_CACHE_VERSION}\n${cfgText}`);
   const cacheFile = Path.join(CONFIG_CACHE_DIR, `${configHash}.json`);
 
   const cached = casRead<IgnoreCacheEntry>(cacheFile);
   if (cached) {
-    return { ignores: cached.ignores.map(globToRegExp), configHash };
+    return { ignores: cached.ignores.map(globToRegExp), configHash, cfgPath };
   }
 
   const config = (await import(pathToFileURL(cfgPath).href)).default;
@@ -104,7 +132,7 @@ async function loadConfig(repoRoot: string) {
   }
 
   casWrite(cacheFile, JSON.stringify({ ignores } satisfies IgnoreCacheEntry));
-  return { ignores: ignores.map(globToRegExp), configHash };
+  return { ignores: ignores.map(globToRegExp), configHash, cfgPath };
 }
 
 function isTSJS(filePath: string): boolean {
@@ -251,7 +279,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
 
   const fixMode = rawEslintArgs.includes('--fix');
   const repoRoot = getRepoRoot();
-  const { ignores, configHash } = await loadConfig(repoRoot);
+  const { ignores, configHash, cfgPath } = await loadConfig(repoRoot);
   const version = eslintVersion(repoRoot);
   const catalog = catalogHash(repoRoot);
 
@@ -290,22 +318,24 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
     return ignores.some((pattern) => pattern.test(p));
   }
 
-  function walk(dir: string) {
+  function walk(dir: string, repoRoot: string, cfgPathDir: string) {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = dir + '/' + entry.name;
-      if (ignored(fullPath)) {
+      const ignorePath = Path.relative(repoRoot, fullPath).split(Path.sep).join('/');
+      
+      if (ignored(ignorePath)) {
         continue;
       }
       if (entry.isDirectory()) {
-        walk(fullPath);
+        walk(fullPath, repoRoot, cfgPathDir);
       } else if (isTSJS(fullPath)) {
         files.push(fullPath);
       }
     }
   }
   if (fs.statSync(targetPath)?.isDirectory()) {
-    walk(targetPath);
+    walk(targetPath, Path.dirname(cfgPath), targetPath ?? process.cwd());
   } else {
     files.push(targetPath);
   }
