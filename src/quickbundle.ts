@@ -42,7 +42,7 @@ export async function quickBundle(
   const cacheDir = Path.join(CACHEDIR, Path.basename(Path.basename(entryFile) + hashKey));
 
   options.outdir = cacheDir;
-  let outFileName = entryFiles[0];
+  let outFileName = entryFiles[0]!;
   if (!outFileName.toLowerCase().endsWith('.js')) {
     outFileName += '.js';
   }
@@ -57,7 +57,7 @@ export async function quickBundle(
       fs.writeFileSync(result.path, result.contents);
     }
     fs.mkdirSync(Path.dirname(outFilePath + ext), { recursive: true });
-    fs.writeFileSync(outFilePath + ext, meta.outputFiles![0].contents);
+    fs.writeFileSync(outFilePath + ext, meta.outputFiles![0]!.contents);
   }
   return await import(pathToFileURL(outFilePath + ext).href);
 }

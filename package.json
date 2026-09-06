@@ -1,19 +1,31 @@
 {
   "name": "@pathtx/eslint-dispatcher",
-  "verison": "0.0.1",
+  "version": "0.0.1",
+  "author": "Joseph Eagar",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "main": "src/eslint.ts",
   "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/types/src/index.d.ts",
+  "bin": {
+    "eslint-dispatcher": "./dist/cli.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/types/src/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
   "scripts": {
+    "build": "node scripts/build.mjs && tsc -p tsconfig.build.json",
     "lint:eslint": "node src/eslint.ts",
     "lint": "pnpm run lint:eslint",
-    "prettier": "pnpm exec --loglevel=error prettier src/* package.json -w"
+    "prettier": "pnpm exec prettier src/* package.json -w",
+    "typecheck": "pnpm exec tsc --noEmit"
   },
-  "index": "src/index.ts",
-  "author": "Josepg Eagar",
   "devDependencies": {
     "@eslint/css": "^2.0.0",
     "@eslint/js": "^10.0.1",

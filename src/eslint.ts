@@ -50,7 +50,7 @@ function casRead<T>(filePath: string): T | undefined {
   }
 }
 
-const CACHE_ROOT = Path.join(getRepoRoot(), '.eslintcache');
+const CACHE_ROOT = Path.join(getRepoRoot(), '.eslintcache-d');
 const CONFIG_CACHE_DIR = Path.join(CACHE_ROOT, 'config');
 const RESULT_CACHE_DIR = Path.join(CACHE_ROOT, 'results');
 const CONFIG_CACHE_VERSION = 3;
@@ -96,7 +96,7 @@ async function loadConfig(repoRoot: string) {
 
   const config = (await import(pathToFileURL(cfgPath).href)).default;
 
-  const ignores = ['**/node_modules/**', '**/.git/**'];
+  const ignores = ['**/node_modules/**', '.eslintcache-d/**', '**/.quickbuild/**', '**/.git/**'];
   for (const item of config) {
     for (const pattern of item.ignores ?? []) {
       ignores.push(pattern);
@@ -243,7 +243,7 @@ function pruneResultCache() {
   }
 }
 
-async function run(targetPath: string, rawEslintArgs: string[]) {
+export async function run(targetPath: string, rawEslintArgs: string[]) {
   if (targetPath === '--fix') {
     targetPath = '.';
     rawEslintArgs.push('--fix');
@@ -363,7 +363,7 @@ async function run(targetPath: string, rawEslintArgs: string[]) {
     batches.at(-1)!.push(toLint[i]!);
     curSize += size;
   }
-   
+
   console.log(
     `eslint: ${files.length} files, ${cachedClean + cachedWithErrors} from cache ` +
       `(${cachedWithErrors} with errors), ${toLint.length} to lint in ${batches.length} batches`,
@@ -480,14 +480,3 @@ async function run(targetPath: string, rawEslintArgs: string[]) {
   pruneResultCache();
   process.exitCode = hadErrors ? 1 : 0;
 }
-
-const startTime = performance.now();
-run(process.argv[2] ?? '.', process.argv.slice(3))
-  .catch((error) => {
-     
-    console.error(error);
-    process.exitCode = 1;
-  })
-  .then(() => {
-    process.stdout.write(`Total time: ${((performance.now() - startTime) / 1000.0).toFixed(2)}s\n`);
-  });
