@@ -6,7 +6,6 @@ import globals from 'globals';
 import * as quickbundle from './src/quickbundle.ts';
 const tseslint = await quickbundle.quickBundleModule('typescript-eslint', { format: 'cjs' }, true);
 //import tseslint from "typescript-eslint";
-
 // doesn't work with quickbundle
 import json from '@eslint/json';
 
@@ -14,14 +13,11 @@ import json from '@eslint/json';
 import css from '@eslint/css';
 
 const eslintConfig = await quickbundle.quickBundleModule('eslint/config', { format: 'cjs' }, true);
-const { defineConfig , globalIgnores} = eslintConfig;
+const { defineConfig, globalIgnores } = eslintConfig;
 //import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
-  globalIgnores([
-    "**/node_modules/**",
-    "**/.quickbuild/**",
-  ]),
+  globalIgnores(['**/dist/**']),
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
     plugins: { js },

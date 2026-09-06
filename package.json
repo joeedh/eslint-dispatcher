@@ -21,9 +21,12 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs && tsc -p tsconfig.build.json",
-    "lint:eslint": "node src/eslint.ts",
+    "lint:eslint": "node bin/cli.ts --fix",
     "lint": "pnpm run lint:eslint",
-    "prettier": "pnpm exec prettier src/* package.json -w",
+    "lint:eslint:check": "node bin/cli.ts",
+    "lint:check": "pnpm run lint:eslint:check",
+    "format": "pnpm exec prettier src/* package.json -w",
+    "format:check": "pnpm exec prettier src/* package.json --check",
     "typecheck": "pnpm exec tsc --noEmit"
   },
   "devDependencies": {

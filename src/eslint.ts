@@ -320,7 +320,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
     const content = fs.readFileSync(file, 'utf-8');
     const key = resultCacheKey({
       configHash,
-      catalogHash: catalog,
+      catalogHash  : catalog,
       eslintVersion: version,
       argsKey,
       relPath,
@@ -421,11 +421,12 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
     let results: EslintJsonResult[];
     try {
       results = JSON.parse(stdout);
-    } catch {
+    } catch (error: unknown) {
       // eslint didn't produce JSON at all (e.g. a config error) - surface it raw and bail
       // on caching this batch rather than guessing at per-file results.
       log.push(stdout);
-      console.log(log.join('\n'));
+      console.log((error as Error).message);
+      console.log(stdout.slice(0, 500));
       hadErrors = true;
       return;
     }
@@ -453,7 +454,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
       const relPath = Path.relative(repoRoot, result.filePath).split(Path.sep).join('/');
       const key = resultCacheKey({
         configHash,
-        catalogHash: catalog,
+        catalogHash  : catalog,
         eslintVersion: version,
         argsKey,
         relPath,
@@ -464,7 +465,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
         cachePath(key),
         JSON.stringify({
           errorCount: result.errorCount,
-          output: text,
+          output    : text,
         } satisfies CachedLintResult),
       );
       if (performance.now() - lastFlush > flushInterval) {
