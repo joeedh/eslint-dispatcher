@@ -350,7 +350,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
     const content = fs.readFileSync(file, 'utf-8');
     const key = resultCacheKey({
       configHash,
-      catalogHash: catalog,
+      catalogHash  : catalog,
       eslintVersion: version,
       argsKey,
       relPath,
@@ -484,7 +484,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
       const relPath = Path.relative(repoRoot, result.filePath).split(Path.sep).join('/');
       const key = resultCacheKey({
         configHash,
-        catalogHash: catalog,
+        catalogHash  : catalog,
         eslintVersion: version,
         argsKey,
         relPath,
@@ -495,7 +495,7 @@ export async function run(targetPath: string, rawEslintArgs: string[]) {
         cachePath(key),
         JSON.stringify({
           errorCount: result.errorCount,
-          output: text,
+          output    : text,
         } satisfies CachedLintResult),
       );
       if (performance.now() - lastFlush > flushInterval) {
