@@ -1,0 +1,12 @@
+{
+  "name": "@pathtx/eslint-dispatcher",
+  "verison": "0.0.1",
+  "author": "Josepg Eagar",
+  "devDependencies": {
+    "esbuild": "^0.17.2",
+    "eslint": "^10.2.0",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.69.0"
+  },
+  "packageManager": "pnpm@10.33.2"
+}
